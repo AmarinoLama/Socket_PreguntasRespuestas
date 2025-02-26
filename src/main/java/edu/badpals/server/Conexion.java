@@ -1,22 +1,19 @@
-package edu.badpals;
+package edu.badpals.server;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Conexion {
 
-    private Connection instance = null;
+    private Connection conexion = null;
 
     private void connectDatabase() {
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             String url = "jdbc:mysql://localhost:3306/preguntasrespuestas";
-            instance = DriverManager.getConnection(url, "root", "root");
+            conexion = DriverManager.getConnection(url, "root", "root");
         } catch (SQLException e) {
             System.out.println("Error al conectar a la base de datos:");
             e.printStackTrace();
@@ -28,18 +25,20 @@ public class Conexion {
     public void addPreguntaRespuesta(String pregunta, String respuesta) {
         connectDatabase();
         try {
-            instance.createStatement().executeUpdate("CALL InsertarPreguntaRespuesta('" + pregunta + "', '" + respuesta + "')");
+            // usar los "?"
+            CallableStatement stms = conexion.prepareCall("{CALL InsertarPreguntaRespuesta(?, ?)}");
+            stms.setString(1, pregunta);
+            stms.setString(2, respuesta);
+            stms.executeQuery();
         } catch (SQLException e) {
             System.out.println("Error al insertar pregunta y respuesta:");
             e.printStackTrace();
         }
     }
 
-    public List<String> getPreguntasRespuestas() {
-        connectDatabase();
-        List<String> preguntasRespuestas = new ArrayList<>();
+    /*public String getRespuesta(String pregunta) {
         try {
-            ResultSet rs = instance.createStatement().executeQuery("SELECT * FROM preguntas_respuestas");
+            ResultSet rs = instance.createStatement().executeQuery("SELECT pregunta_id, respuesta_id FROM preguntas_respuestas AS pr INNER JOIN preguntas AS p ON pr.pregunta_id = p.id");
             while (rs.next()) {
                 preguntasRespuestas.add(rs.getString("pregunta") + ": " + rs.getString("respuesta"));
             }
@@ -47,12 +46,11 @@ public class Conexion {
             System.out.println("Error al obtener preguntas y respuestas:");
             e.printStackTrace();
         }
-        return preguntasRespuestas;
-    }
+    }*/
 
     public void closeConnection() {
         try {
-            instance.close();
+            conexion.close();
         } catch (SQLException e) {
             System.out.println("Error al cerrar la conexión:");
             e.printStackTrace();
