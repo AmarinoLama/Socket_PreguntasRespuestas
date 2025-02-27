@@ -8,11 +8,17 @@ public class Conexion {
 
     private Connection conexion = null;
 
+    public Conexion() {
+        connectDatabase();
+    }
+
     private void connectDatabase() {
+
+        // REALIZADO CON LA BBDD DE LA PROFE
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://localhost:3306/preguntasrespuestas";
+            String url = "jdbc:mysql://localhost:3306/preguntas_respuestasbd";
             conexion = DriverManager.getConnection(url, "root", "root");
         } catch (SQLException e) {
             System.out.println("Error al conectar a la base de datos:");
@@ -25,8 +31,7 @@ public class Conexion {
     public void addPreguntaRespuesta(String pregunta, String respuesta) {
         connectDatabase();
         try {
-            // usar los "?"
-            CallableStatement stms = conexion.prepareCall("{CALL InsertarPreguntaRespuesta(?, ?)}");
+            CallableStatement stms = conexion.prepareCall("{CALL insert_pregunta_respuesta(?, ?)}");
             stms.setString(1, pregunta);
             stms.setString(2, respuesta);
             stms.executeQuery();
@@ -36,17 +41,37 @@ public class Conexion {
         }
     }
 
-    /*public String getRespuesta(String pregunta) {
+    public String getRespuestaRandom(String pregunta) {
+        connectDatabase();
+        String respuesta = "notFound";
         try {
-            ResultSet rs = instance.createStatement().executeQuery("SELECT pregunta_id, respuesta_id FROM preguntas_respuestas AS pr INNER JOIN preguntas AS p ON pr.pregunta_id = p.id");
-            while (rs.next()) {
-                preguntasRespuestas.add(rs.getString("pregunta") + ": " + rs.getString("respuesta"));
+            // Llamada a la función get_respuesta_from_pregunta para obtener la ID de la respuesta
+            CallableStatement stms = conexion.prepareCall("{? = CALL get_respuesta_from_pregunta(?)}");
+            stms.registerOutParameter(1, Types.INTEGER);  // Suponiendo que la ID sea un número entero
+            stms.setString(2, pregunta);
+            stms.execute();
+
+            // Obtener la ID de la respuesta
+            int idRespuesta = stms.getInt(1);
+
+            if (idRespuesta != 0) {
+                // Realizar la query para obtener la respuesta usando la ID obtenida
+                String query = "SELECT cadena_respuesta FROM respuestas WHERE id = ?";
+                PreparedStatement stms2 = conexion.prepareStatement(query);
+                stms2.setInt(1, idRespuesta);
+                ResultSet rs = stms2.executeQuery();
+
+                if (rs.next()) {
+                    respuesta = rs.getString("cadena_respuesta");
+                }
             }
+
         } catch (SQLException e) {
-            System.out.println("Error al obtener preguntas y respuestas:");
+            System.out.println("Error al obtener respuesta random:");
             e.printStackTrace();
         }
-    }*/
+        return respuesta;
+    }
 
     public void closeConnection() {
         try {

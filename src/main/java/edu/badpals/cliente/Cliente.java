@@ -8,44 +8,39 @@ import java.util.Scanner;
 
 public class Cliente {
 
-    // manda una pregunta al servidor y recibe una respuesta
-
-    // Conexión al servidor
-    private static String host = "localhost";
-    private static int puerto = 6000;
-
-    public Cliente(int puerto) {
-        Cliente.puerto = puerto;
-    }
-
     public static void main(String[] args) throws Exception {
 
         try {
             // Crear cliente
             System.out.println("PROGRAMA CLIENTE INICIADO....");
-            Socket cliente = null;
-
-            cliente = new Socket(host, puerto);
+            Socket cliente = new Socket("localhost", 6000);
 
             // Flujos de entrada y salida
             DataOutputStream flujoSalida = new DataOutputStream(cliente.getOutputStream());
             DataInputStream flujoEntrada = new DataInputStream(cliente.getInputStream());
             Scanner sc = new Scanner(System.in);
 
-            // Recibir primer mensaje del servidor
-            System.out.println(flujoEntrada.readUTF());
+            String pregunta = "";
+            String respuesta = "";
 
-            // Mandar la pregunta
-            flujoSalida.writeUTF(sc.nextLine());
+            while (true) {
+                System.out.println("PREGUNTAME ALGO (Para finalizar escribe SALIR):");
 
-            // Recibir segundo mensaje del servidor
-            System.out.println(flujoEntrada.readUTF());
+                // leo la pregunta y se la mando al servidor
+                pregunta = sc.nextLine();
+                flujoSalida.writeUTF(pregunta);
 
-            // Mandar la respuesta
-            flujoSalida.writeUTF(sc.nextLine());
+                if (pregunta.equals("SALIR")) {
+                    break;
+                }
+
+                // leo la respuesta del servidor
+                respuesta = flujoEntrada.readUTF();
+                System.out.println(respuesta);
+            }
 
             // Cerrar streams y sockets
-            System.out.println(flujoEntrada.readUTF());
+            System.out.println("Cerrando streams y sockets");
             flujoEntrada.close();
             flujoSalida.close();
             cliente.close();

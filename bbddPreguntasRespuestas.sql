@@ -82,7 +82,7 @@ CALL InsertarPreguntaRespuesta ("CUÁNTOS DÍAS TIENE EL AÑO?", "365");
 SELECT * FROM pregunta_respuesta;
 
 /*
-faltan 3 trigers uno para cuando se cree una pregunta con una respuesta 
+faltan 3 trigers uno para cuando se cree una pregunta con una respuesta
 	> verificar que existe la pregunta o no
     > verificar que existe la respuesta o no
     > verificar que al borrar algo no queden preguntas ni respuestas sueltas

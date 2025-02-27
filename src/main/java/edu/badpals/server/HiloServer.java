@@ -3,57 +3,61 @@ package edu.badpals.server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 public class HiloServer extends Thread {
 
-    private int numeroPuerto = 0;
-    private ServerSocket servidor = null;
+    private Socket socket;
+    private Conexion bd;
+    private Random random;
+    private DataInputStream fentrada;
+    private DataOutputStream fsalida;
+
     private boolean verificacion = false;
 
-    public HiloServer(int numeroPuerto) {
-        this.numeroPuerto = numeroPuerto;
+    public HiloServer(Socket s) throws IOException {
+        //el hilo recibe el socket conectado al cliente
+        socket = s;
+
+        // el hilo se encarga de crear flujos de entrada y salida para el socket
+        fsalida = new DataOutputStream(socket.getOutputStream());
+        fentrada = new DataInputStream(socket.getInputStream());
+
+        // creamos las instancias para manejar la bd y para tener el random
+        bd = new Conexion();
+        random = new Random();
     }
 
     public void run() {
         try {
-            // Crear servidor
-            servidor = new ServerSocket(numeroPuerto);
+            // Inicializamos datos
+            String cadena = "";
+            System.out.println("COMUNICO CON: " + socket.toString());
 
-            // Aceptar cliente
-            Socket clienteConectado = null;
-            System.out.println("Esperando al cliente.....");
-            clienteConectado = servidor.accept();
+            // Bucle de comunicación
+            cadena = fentrada.readUTF();
+            System.out.println("Pregunta recibida: " + cadena);
+            while (!cadena.equals("SALIR")) {
+                // le paso la respuesta random a la pregunta y espero por otra pregunta
+                String respuesta = bd.getRespuestaRandom(cadena);
+                if (respuesta.equals("notFound")) {
+                    respuesta = "No tengo la respuesta a la pregunta";
+                }
 
-            // Inicializar flujos
-            DataOutputStream flujoSalida = new DataOutputStream(clienteConectado.getOutputStream());
-            DataInputStream flujoEntrada = new DataInputStream(clienteConectado.getInputStream());
-            Scanner sc = new Scanner(System.in);
+                //pasamos al cliente la respuesta del servidor
+                fsalida.writeUTF(respuesta);
 
-            // Mandar pregunta
-            flujoSalida.writeUTF("Escribe la pregunta para subir a la BBDD: ");
-
-            // Recibir pregunta
-            String pregunta = flujoEntrada.readUTF();
-
-            // Mandar respuesta
-            flujoSalida.writeUTF("Escribe la respuesta de la pregunta anterior para subir a la BBDD: ");
-
-            // Recibir pregunta
-            String respuesta = flujoEntrada.readUTF();
-
-            // Añadir pregunta y respuesta a la base de datos
-            addPreguntaRespuesta(pregunta, respuesta);
-
-            // Mandar mensaje al servidor
-            flujoSalida.writeUTF("Se ha añadido la pregunta y respuesta a la base de datos: " + verificacion);
+                // leemos la siguiente pregunta
+                cadena = fentrada.readUTF();
+            }
 
             // Cerrar streams y sockets
             System.out.println("El programa ha finalizado");
-            flujoEntrada.close();
-            flujoSalida.close();
-            clienteConectado.close();
-            servidor.close();
+            fsalida.close();
+            fentrada.close();
+            socket.close();
 
         } catch (IOException i) {
             i.printStackTrace();
@@ -71,9 +75,5 @@ public class HiloServer extends Thread {
             e.printStackTrace();
             verificacion = false;
         }
-    }
-
-    private void getRespuesta(String pregunta) {
-
     }
 }
